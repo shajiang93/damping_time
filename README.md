@@ -1,10 +1,10 @@
 # damping_time
 Code used for paper "Reproductive dispersion and damping time scale with life-history speed"
+Below are the files needed for analyses and their brief descriptions.
 
 ------------------------------------------------------------
 Part 1: Data cleanning, calculation and preliminary results
 ------------------------------------------------------------
-Files needed:
 "[1] data processing and plotting for damping paper.R"
  - This is the R code used for data cleanning, calculation and preliminary regression analyses
  
