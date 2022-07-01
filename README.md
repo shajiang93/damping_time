@@ -1,12 +1,13 @@
 # damping_time
 Code used for paper "Reproductive dispersion and damping time scale with life-history speed"
 Below are the files needed for analyses and their brief descriptions.
+Please edit the file path while running the scripts.
 
 ------------------------------------------------------------
 Part 1: Data cleanning, calculation and preliminary results
 ------------------------------------------------------------
 "[1] data processing and plotting for damping paper.R"
- - This is the R code used for data cleanning, calculation and preliminary regression analyses
+ - This is the R code used for data cleanning, calculation and preliminary regression analyses.
  
 "tulja_lab_master_com_p_adre.2.1.RData"
 - This is the combined dataset from COMADRE (DOI:10.1111/1365-2656.12482) and COMPADRE (DOI:10.1111/1365-2745.12334) after data correction using original papers.
@@ -30,3 +31,13 @@ Part 3: Results in the paper (PGLS, PPCA, etc.)
 ------------------------------------------------------------
 "[3] phylogenetic analysis for damping paper.R"
 - This is the R code used to produce figures in our paper, including results based on PGLS, PPCA, etc.
+- Also note that this part of the analyses can be run directly using only the files below.
+
+"final_tree_corrected_newversion v2.tre"
+- This file contains the matched phylogenetic tree from Part 2.
+
+"match_list_uncorrected_newversion v2.csv"
+- This file contains the species that can be matched with the phylogenetic tree from Part 2.
+
+"full animal and plant data v2.csv"
+- This file contains the results (life-history traits, such as generation time, reproductive disperson, damping time, etc.) from Part 1.
