@@ -10,9 +10,6 @@ library(popbio)
 library(rlist)
 
 rm(list=ls())
-## change to your file path
-setwd("/Users/shajiang/Documents/AAA @Stanford/research/Notes_AgeStructure")
-getwd()
 
 ## ==============================
 # 1. Get functions ######
@@ -406,11 +403,6 @@ Stage_model <- function(sample){
   eigenvalue
 }
 
-# check this one 
-# i = which(db_animal_stage@data[["MatrixID"]] == "249826")
-# sample = db_plant_stage
-# sample = db_animal_stage
-
 ## use simple age model
 Age_model <- function(sample2){
   eigenvalue.age <- data.frame()
@@ -573,14 +565,11 @@ Age_model <- function(sample2){
 # 2, Read master database and calculate ####
 ## =========================================
 ## change to your file path
-db <- cdb_fetch(paste0("./COPMADRE and COMADRE/tulja_lab_master_com_p_adre.2.1.RData"))%>%
+db <- cdb_fetch(paste0("./tulja_lab_master_com_p_adre.2.1.RData"))%>%
   cdb_unnest
 length(unique(db@data$MatrixID))
 
 ## (1) Plant by stage ####
-# db_plant_stage <- db %>%
-#   filter(check_is_plant == TRUE,
-#          check_is_stage == TRUE)
 db_plant_stage <- db[(db$check_is_plant == TRUE) & (db$check_is_stage == TRUE)]
 Compadre_Stage  <- Stage_model(db_plant_stage)%>%
   mutate(db_source = "Compadre_Stage")
@@ -595,10 +584,6 @@ summary(stasis_plant)
 summary(stasis_animal)
 
 ## (2) Animal by stage ####
-# db_animal_stage <- db %>%
-#   filter(check_is_animal == TRUE,
-#          check_is_stage == TRUE)%>%
-#   filter(!CommonName %in% "Chinook salmon") # delete salmon here
 db_animal_stage <- db[(db$check_is_animal == TRUE) & (db$check_is_stage == TRUE) &
                         (!db$CommonName %in% "Chinook salmon")]
 
@@ -608,12 +593,6 @@ Comadre_Stage <- Stage_model(db_animal_stage)%>%
 ## (3) Animal from age to stage ####
 db$overall_survival <- sapply(matU(db), overall_survival_check)
 db$single.fertility <- sapply(matF(db), single_fertility) #check if the fertility matrix only has one value
-
-# db_animal_age2stage <- db %>%
-#   filter(check_is_animal == TRUE,
-#          check_is_age2stage == TRUE)%>%
-#   filter(!CommonName %in% "Chinook salmon")%>% # delete salmon here
-#   filter(overall_survival == 0) # keep those with normal survival data
 db_animal_age2stage <- db[(db$check_is_animal == TRUE) & (db$check_is_age2stage == TRUE) &
                         (!db$CommonName %in% "Chinook salmon") & (db$overall_survival == 0)]
 
@@ -622,18 +601,10 @@ Comadre_age2stage <- Stage_model(db_animal_age2stage)%>%
 Comadre_age2stage_phi <- out[[2]]
 
 ## (4) Animal by age ####
-# db_animal_age <- db %>%
-#   filter(check_is_animal == TRUE,
-#          check_is_age == TRUE)%>%
-#   filter(!CommonName %in% "Chinook salmon")%>% # delete salmon here
-#   filter(single.fertility == "0") # keep more than one value in fertility
 db_animal_age <- db[(db$check_is_animal == TRUE) & (db$check_is_age == TRUE) &
                       (!db$CommonName %in% "Chinook salmon") & (db$single.fertility == 0)]
 
 Comadre_Age <- Age_model(db_animal_age)%>%
-  mutate(db_source = "Comadre_Age")
-
-Comadre_Age2 <- Age_model_old(db_animal_age)%>%
   mutate(db_source = "Comadre_Age")
 
 summary(Comadre_Age$Tc - Comadre_Age2$Tc)
@@ -642,7 +613,7 @@ summary(Comadre_Age$damping.cal - Comadre_Age2$damping.cal)
 
 ## (5) JMG_MO ####
 ## change to your file path
-data <- read.csv("./output data/combined dataset of JMG and MO without duplicates.csv")
+data <- read.csv("./combined dataset of JMG and MO without duplicates.csv")
 id.name <- unique(data$id)
 
 ## simple leslie matrix
@@ -788,8 +759,6 @@ animal$CommonName[animal$CommonName == "Big horn sheep"]<-"Bighorn sheep"
 # Returns string without leading or trailing white space
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 animal$SpeciesAccepted <- trim(animal$SpeciesAccepted)
-write.csv2(animal, paste("./output data/full animal data v2.csv"),
-           quote = T,na = "NA")
 
 plant <- Compadre_Stage%>%
   filter(sigma > sigma.filter,
@@ -801,8 +770,6 @@ plant <- Compadre_Stage%>%
   mutate(db_source.specifc = "Compadre_Stage")
 plant$CommonName[plant$SpeciesAccepted == "Fucus vesiculosus"]<-"Bladder wrack"
 plant$SpeciesAccepted <- trim(plant$SpeciesAccepted)
-write.csv2(plant, paste("./output data/full plant data v2.csv"),
-           quote = T,na = "NA")
 
 # combine animals and plants
 all_data <- plant %>%
@@ -818,39 +785,14 @@ all_data <- plant %>%
     db_source %in% c("Compadre_Stage", "Compadre_Age") ~ "Plant by stage"
   ))%>%
   mutate(damping.time = 1/damping.cal)
-  # select(id, MatrixID, StudiedSex, Kingdom, Phylum, Class, Order, Family,
-  #        SpeciesAccepted, Authors, YearPublication, Journal, Altitude, ProjectionInterval,CommonName,
-  #        R0, Tc, sigma, damping.time, damping.cal, damping.approx, alpha, omega, beta, db_source, db_taxa, db_sep, db_source.specifc)
-write.csv2(all_data, paste("./output data/full animal and plant data v2.csv"),
+write.csv2(all_data, paste("./full animal and plant data v2.csv"),
            quote = T,na = "NA")
 
-summary(Comadre_Age$Tc)
-summary(Comadre_Stage$Tc)
-summary(Comadre_age2stage$Tc)
-summary(Compadre_Stage$Tc)
-
-summary(Comadre_Age$sigma)
-summary(Comadre_Stage$sigma)
-summary(Comadre_age2stage$sigma)
-summary(Compadre_Stage$sigma)
-
-summary(Comadre_Age$damping.cal)
-summary(Comadre_Stage$damping.cal)
-summary(Comadre_age2stage$damping.cal)
-summary(Compadre_Stage$damping.cal)
-
-summary(all_data$Tc)
-summary(all_data$sigma)
-summary(all_data$damping.cal)
 ## ==============================
 ### 3, plot #####
 ## ==============================
 ## 3.1 read data and count no. of matrices and species #####
-all_data <- read.csv2("./output data/full animal and plant data v2.csv")
-all_phi <- list.load("./output data/phi list for staged data.rds")
-# %>%filter(R0<=1000) ## filter out high R0
-
-all_data <- all_data %>%
+all_data <- read.csv2("./full animal and plant data v2.csv")%>%
   mutate(R0_range = case_when(
     R0<=0.9 ~ "R0 <= 0.9",
     R0<=1.1 & R0>0.9~ "0.9 < R0 <= 1.1",
@@ -890,7 +832,7 @@ all_data %>%
   group_by(db_taxa)%>%
   count()
 
-#### 3.2 linear regression reported in the paper ####
+#### 3.2 linear regression ####
 lm <- lm(log(Animal_Age$sigma)~log(Animal_Age$Tc))
 lm <- lm(log(Comadre_Stage$sigma)~log(Comadre_Stage$Tc))
 lm <- lm(log(Compadre_Stage$sigma)~log(Compadre_Stage$Tc))
@@ -907,27 +849,9 @@ confint(lm, 'log(Animal_Age$Tc)', level=0.95)
 confint(lm, 'log(Comadre_Stage$Tc)', level=0.95)
 confint(lm, 'log(Compadre_Stage$Tc)', level=0.95)
 
-### 3.3 plots in damping paper####
+### 3.3 plots based on OLS ####
+### These figures are not presented in the paper ###
 #### (1) Tc and sigma #####
-# p_Tc_sigma <- ggplot(all_data, 
-#                      aes(log(Tc), log(sigma), 
-#                          color = db_source)) +
-#   stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-#                parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-#   scale_color_manual(values = c("#F8766D","#C77CFF","#7CAE00","#00BFC4")) +
-#   geom_point(shape = 21, alpha = 1)+
-#   theme_bw()+
-#   xlab(expression(log(Tc)))+ylab(expression(log(sigma)))+
-#   theme(legend.title=element_blank(),
-#         axis.text.x = element_text(color = "grey20", size = 20),
-#         axis.text.y = element_text(color = "grey20", size = 20), 
-#         axis.title.x = element_text(color = "grey20", size = 20),
-#         axis.title.y = element_text(color = "grey20", size = 20), 
-#         legend.text=element_text(size=15),
-#         strip.text.x = element_text(size = 15))+
-#   guides(colour = guide_legend(override.aes = list(size=3)))+
-#   facet_wrap(. ~db_sep, nrow = 3)
-
 myshape = c(4, 21, 21, 21)
 all_data$db_source <- factor(all_data$db_source, levels = c("GO_Age","Comadre_Age",
                                                             "Comadre_Stage","Compadre_Stage"))
@@ -1013,25 +937,6 @@ p_Tc_sigma_class2
 ggsave("./plot/Tc and sigma (plant), facet by Class.png", p_Tc_sigma_class2, width = 9, height = 9)
 
 #### (2) Tc and damping #####
-# p_Tc_damping <- ggplot(all_data, 
-#                        aes(log(Tc), log(1/damping.cal), 
-#                            color = db_source)) +
-#   stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-#                parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-#   scale_color_manual(values = c("#F8766D","#C77CFF","#7CAE00","#00BFC4")) +
-#   geom_point(shape = 21, alpha = 1)+
-#   theme_bw()+
-#   theme(legend.title=element_blank(),
-#         legend.text=element_text(size=15),
-#         axis.text.x = element_text(color = "grey20", size = 20),
-#         axis.text.y = element_text(color = "grey20", size = 20), 
-#         axis.title.x = element_text(color = "grey20", size = 20),
-#         axis.title.y = element_text(color = "grey20", size = 20), 
-#         strip.text.x = element_text(size = 15))+
-#   guides(colour = guide_legend(override.aes = list(size=3)))+
-#   xlab(expression(log(Tc)))+ylab(expression(log(tau)))+
-#   facet_wrap(. ~db_sep, nrow = 3)
-
 p_Tc_damping <- ggplot(all_data, 
                        aes(log(Tc), log(1/damping.cal)))+
 geom_point(aes(shape = db_source), alpha = 0.7)+
@@ -1287,525 +1192,3 @@ p_R0_damping <- ggplot(all_data,
   facet_wrap(. ~db_sep, nrow = 2)
 p_R0_damping
 ggsave("./plot/R0 and damping.png", p_R0_damping , width = 9, height = 9)
-
-#### (New) new figures #####
-all_data <- all_data%>%
-  mutate(log_slope = case_when(
-    db_sep %in% c("Animal by age") ~ 1.09,
-    db_sep %in% c("Animal by stage") ~ 1.11,
-    db_sep %in% c("Plant by stage") ~ 1.17),
-    log_intercept = case_when(
-      db_sep %in% c("Animal by age") ~ -1.08,
-      db_sep %in% c("Animal by stage") ~ -0.749,
-      db_sep %in% c("Plant by stage") ~ -0.957),
-    log_sigma_approx = log(Tc)*log_slope+log_intercept,
-    error = (log(sigma) - log_sigma_approx)/log(sigma)*100,
-    logsigma_logTc = log(sigma)/log(Tc))
-
-z <- c(10,25,50,100)
-outlier <- all_data %>%
-  filter(abs(error)>z[4])%>%
-  group_by(db_sep)%>%
-  count()
-outlier
-
-all_data_trim <- all_data%>%
-  filter(abs(error)<=z[2])
-
-all_data %>%
-  group_by(db_sep)%>%
-  count()
-
-pdf("./plot/new figures for reproductive dispersion after ignoring outlier.pdf",
-    height=12, width=9, onefile = T)
-db = all_data_trim
-
-pdf("./plot/new figures for reproductive dispersion.pdf",
-    height=12, width=9, onefile = T)
-db = all_data
-
-p <- ggplot(db, 
-                     aes(Tc, sigma)) +
-  geom_point(aes(shape = db_source), alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  ggtitle("1) S vs. T")+
-  # xlab(expression(log(Tc)))+ylab(expression(log(sigma)))+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-
-p <- ggplot(db, 
-            aes(Tc, log(sigma)/log(Tc))) +
-  geom_point(aes(shape = db_source), alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  ggtitle("2) (log S/log T) vs. T")+
-  # xlab(expression(log(Tc)))+ylab(expression(log(sigma)))+
-  # ylim(-200,50)+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-p <- ggplot(db, 
-            aes(sigma, log(sigma)/log(Tc))) +
-  geom_point(aes(shape = db_source), alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  ggtitle("3) (log S/log T) vs. S")+
-  # xlab(expression(log(Tc)))+ylab(expression(log(sigma)))+
-  # ylim(-200,50)+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-p <- ggplot(db, 
-            aes(Tc, log(sigma/Tc))) +
-  geom_point(aes(shape = db_source), alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  ggtitle("4) log (S/T) vs. T")+
-  # xlab(expression(log(Tc)))+ylab(expression(log(sigma)))+
-  # ylim(-200,50)+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-p <- ggplot(db, 
-            aes(sigma, log(sigma/Tc))) +
-  geom_point(aes(shape = db_source), alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  ggtitle("5) log (S/T) vs. S")+
-  # xlab(expression(log(Tc)))+ylab(expression(log(sigma)))+
-  # ylim(-200,50)+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-p <- ggplot(db, 
-            aes(Tc, error)) +
-  geom_point(aes(shape = db_source), alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  ggtitle("6) % Error (log S actual - log S predicted)/(log S actual) in % vs. T")+
-  # xlab(expression(log(Tc)))+ylab(expression(log(sigma)))+
-  # ylim(-200,50)+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-dev.off()
-
-######## compare damping time approximated using 2 moments and using 3 or 4 moments #######
-dbplot <- all_data %>%
-  # filter(db_source %in% c("Comadre_Age", "GO_Age"))%>%
-  mutate(damping.time = 1/damping.cal,
-         damping.time_approx = 1/damping.approx,
-         damping.time_approx_higher3 = 1/damping.approx_higher3,
-         damping.time_approx_higher4 = 1/damping.approx_higher4,
-         prop_diff = abs(damping.time_approx -damping.time)/damping.time,
-         prop_diff3 = abs(damping.time_approx_higher3 -damping.time)/damping.time,
-         prop_diff4 = abs(damping.time_approx_higher4 -damping.time)/damping.time
-         )
-
-p <- ggplot(data = dbplot, 
-            aes(prop_diff,
-                prop_diff3)) +
-  geom_point(alpha = 0.7)+
-  theme(axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  geom_abline(slope = 1, intercept = 0)+
-  facet_wrap(~db_source, nrow = 2, scales = "free")+
-  guides(colour = guide_legend(override.aes = list(size=3)))
-p
-
-# For stage model, the estimation of damping depends on
-# how many ages we include in the loop to estimate phi
-
-# For both age and staged- population,
-# the estimation using 2 moments is the best (small mean and variance of the difference between estimation and exact value)
-tapply(dbplot$prop_diff, dbplot$db_source, mean) 
-tapply(dbplot$prop_diff3, dbplot$db_source, mean) 
-tapply(dbplot$prop_diff4, dbplot$db_source, mean) 
-
-tapply(dbplot$prop_diff, dbplot$db_source, var) 
-tapply(dbplot$prop_diff3, dbplot$db_source, var) 
-tapply(dbplot$prop_diff4, dbplot$db_source, var) 
-
-### different moments: positively covay with each other on a log-log scale
-myshape = c(4, 21, 21, 21)
-all_data$db_source <- factor(all_data$db_source, levels = c("GO_Age","Comadre_Age",
-                                                            "Comadre_Stage","Compadre_Stage"))
-
-p <- ggplot(all_data, 
-            aes(log(Tc), log(sigma))) +
-  geom_point(alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-p <- ggplot(all_data, 
-            aes(Tc,
-                mu3/(Tc^(3)))) +
-  geom_point(alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_source, nrow = 2,scales = "free")
-p
-
-p <- ggplot(all_data, 
-            aes(log(Tc),
-                log(mu3^(1/3)))) +
-  geom_point(alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-p <- ggplot(all_data, 
-            aes(log(Tc),
-                log(mu4^(1/4)))) +
-  geom_point(alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-lm(log(mu4^(1/4)) ~ log(Tc), all_data%>%
-     filter(db_sep %in% c("Plant by stage")))
-
-p <- ggplot(all_data, 
-            aes(dx_mean,
-                dx_var^(1/2))) +
-  geom_point(alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-
-p <- ggplot(all_data, 
-            aes(dx_mean,
-                dx_var^(1/2)/dx_mean)) +
-  geom_point(alpha = 0.7)+
-  stat_poly_eq(formula = y~x,aes(label = paste(..eq.label.., ..rr.label..,..p.value.label.., sep = "~','~")),
-               parse = TRUE, color = "blue", rr.digits = 2, coef.digits = 3,size = 5) +
-  scale_shape_manual(values=myshape)+
-  theme_bw()+
-  theme(legend.title=element_blank(),
-        legend.position = "none",
-        axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))+
-  facet_wrap(. ~db_sep, nrow = 3)
-p
-  
-### for stage model, compare R0, Tc, sigma, mu3, mu4, damping.approx ####
-dbplot <- all_data %>%
-  filter(db_source %in% c("Compadre_Stage","Comadre_Stage"))
-## Tc is the accurate Tc
-## Tc_phi is the Tc from truncated phi
-p <- ggplot(data = dbplot,
-            aes(Tc,Tc_phi)) +
-  geom_point(aes(color = db_source),alpha = 0.7)+
-  geom_abline(slope = 1, intercept = 0)+
-  theme(axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))
-p
-summary(dbplot$Tc - dbplot$Tc_phi)
-
-
-p <- ggplot(data = dbplot,
-            aes(sigma,sigma_phi)) +
-  geom_point(aes(color = db_source),alpha = 0.7)+
-  geom_abline(slope = 1, intercept = 0)+
-  theme(axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))
-p
-summary(dbplot$sigma - dbplot$sigma_phi)
-
-p <- ggplot(data = dbplot,
-            aes(R0,R0_phi)) +
-  geom_point(aes(color = db_source),alpha = 0.7)+
-  geom_abline(slope = 1, intercept = 0)+
-  theme(axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))
-p
-summary(dbplot$R0 - dbplot$R0_phi)
-
-p <- ggplot(data = dbplot,
-            aes(mu3^(1/3),mu3_phi^(1/3))) +
-  geom_point(aes(color = db_source),alpha = 0.7)+
-  geom_abline(slope = 1, intercept = 0)+
-  theme(axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))
-p
-summary(dbplot$mu3^(1/3) - dbplot$mu3_phi^(1/3))
-
-p <- ggplot(data = dbplot,
-            aes(mu4^(1/4),mu4_phi^(1/4))) +
-  geom_point(aes(color = db_source),alpha = 0.7)+
-  geom_abline(slope = 1, intercept = 0)+
-  theme(axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))
-p
-summary(dbplot$mu4^(1/4) - dbplot$mu4_phi^(1/4))
-
-
-p <- ggplot(data = dbplot,
-            aes(damping.approx_higher3,damping.approx_higher3_phi)) +
-  geom_point(aes(color = db_source),alpha = 0.7)+
-  geom_abline(slope = 1, intercept = 0)+
-  theme(axis.text.x = element_text(color = "grey20", size = 20),
-        axis.text.y = element_text(color = "grey20", size = 20), 
-        axis.title.x = element_text(color = "grey20", size = 20),
-        axis.title.y = element_text(color = "grey20", size = 20), 
-        legend.text=element_text(size=15),
-        plot.title = element_text(size = 15, face = "bold"),
-        strip.text.x = element_text(size = 15))+
-  guides(colour = guide_legend(override.aes = list(size=3)))
-p
-summary(dbplot$damping.approx_higher3 - dbplot$damping.approx_higher3_phi)
-
-## see how many ages and percentage of phi included in the truncated phi
-tapply(dbplot$age.trunct, dbplot$db_source, summary) 
-tapply(dbplot$percentage.trunt, dbplot$db_source, summary) 
-
-
-##### plot for phi #####
-data <- read.csv("./output data/combined dataset of JMG and MO without duplicates.csv")
-id.name <- unique(data$id)
-p <- ggplot(data = data %>%
-              filter(id %in% id.name[1:5]), 
-            aes(age,lx*mx/sum(lx*mx), color = id)) +
-  geom_point(alpha = 0.7)+
-  geom_line()
-p
-
-phi_plot <- function(all_phi, idlist){
-  for (i in 1:length(all_phi)) {
-    if(is.null(unique(all_phi[[i]][,4]))){
-      
-    }else if(unique(all_phi[[i]][,4]) %in% idlist){
-      db <- as.data.frame(all_phi[[i]])
-      info <- all_data %>%
-        filter(MatrixID %in% idlist)
-      
-      p <- ggplot(db,
-                  aes(age.cut, phi_dist.cut)) +
-        geom_point(alpha = 0.7)+
-        geom_line()+
-        labs(title=paste(db$MatrixID, info$CommonName),
-        subtitle = paste("Tc:", round(info$Tc, 2), " sigma: ", round(info$sigma,2), 
-                        " mu3: ", round(info$mu3,2), " mu4: ", round(info$mu4,2)))
-      return(p)
-    }
-  }
-}
-
-# Dandelion 245816
-phi_plot(all_phi, 245816)
-# Garlic mustard 241451
-phi_plot(all_phi, 241451)
-# Brazil nut tree 247429
-phi_plot(all_phi, 247429)
-
-# Abies concolor 
-phi_plot(all_phi, 247297)
-
-# Alnus incana subsp. rugosa
-phi_plot(all_phi, 247376)
-
-
-#fish Lake sturgeon 248029
-phi_plot(all_phi, 248029)
-#fish Percid 248220
-phi_plot(all_phi, 248220)
-# Hispid cotton rat 249834
-phi_plot(all_phi, 249834)
-# Mesquite lizard 250133
-phi_plot(all_phi, 250133)
-# White-tailed deer 249514
-phi_plot(all_phi, 249514)
-# White stork 248505
-phi_plot(all_phi, 248505)
-# Blue monkey 249217
-phi_plot(all_phi, 249217)
-
-
-## select half population for plot
-p <- ggplot()+
-  xlim(0,1)+ylim(0,1)
-for (i in 1000:1200) {
-  if(is.null(unique(all_phi[[i]][,4]))){
-    
-  }else{
-    db <- as.data.frame(all_phi[[i]])
-    p <- p + geom_point(db, mapping=aes(age.cut/max(age.cut), phi_dist.cut))+
-      geom_line(db, mapping=aes(age.cut/max(age.cut), phi_dist.cut), size = 0.3)
-  }
-}
-p
-
