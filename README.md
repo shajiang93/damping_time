@@ -1,5 +1,5 @@
 # damping_time
-Code used for paper "Reproductive dispersion and damping time scale with life-history speed".
+Code used for the paper "Reproductive dispersion and damping time scale with life-history speed" by Sha Jiang, Harman Jaggi, Wenyun Zuo, Madan K. Oli, Tim Coulson, Jean‐Michel Gaillard, and Shripad Tuljapurkar.
 
 Below are the files needed for analyses and their brief descriptions.
 Please either open the R project ("Reproductive dispersion and damping time scale with life-history speed (data and code).Rproj") or edit the file path while running the scripts.
